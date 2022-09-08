@@ -3,6 +3,12 @@
 return [
     'disk' => 'local',
 
+    'cache' => [
+        'enable' => true,
+        'driver' => 'file',
+        'prefix' => 'uploader_'
+    ],
+
     'compress' => [
         'extension' => 'webp',
         'quality' => 100
