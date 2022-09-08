@@ -1,0 +1,32 @@
+{
+    "name": "preetender/laravel-uploader",
+    "description": "Upload files",
+    "type": "library",
+    "authors": [
+        {
+            "name": "César Augusto",
+            "email": "cesinhagutierres@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Preetender\\Uploader\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Preetender\\Uploader\\ServiceProvider"
+            ]
+        }
+    },
+    "require": {
+        "intervention/image": "^2.5"
+    },
+    "require-dev": {
+        "illuminate/support": "^9.0",
+        "illuminate/http": "^9.0",
+        "illuminate/container": "^9.0"
+    },
+    "minimum-stability": "dev"
+}
