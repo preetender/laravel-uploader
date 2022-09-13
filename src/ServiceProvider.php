@@ -18,10 +18,10 @@ class ServiceProvider extends BaseServiceProvider
     /**
      * @return void
      */
-    public function boot(): void 
+    public function boot(): void
     {
         $this->publishes([
-            __DIR__ . '/config/uploader.php' => App::configPath('uploader.php')
+            __DIR__ . '/../config/uploader.php' => App::configPath('uploader.php')
         ]);
     }
 }
