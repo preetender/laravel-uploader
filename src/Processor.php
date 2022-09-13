@@ -132,9 +132,9 @@ class Processor
      *
      * @return string
      */
-    public function getHash(): string
+    public function getHash($size = 16): string
     {
-        return bin2hex(random_bytes(32));
+        return Str::random($size);
     }
 
     /**
