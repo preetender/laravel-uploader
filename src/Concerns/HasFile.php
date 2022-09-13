@@ -3,8 +3,10 @@
 namespace Preetender\Uploader\Concerns;
 
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Request;
 use Preetender\Uploader\Models\Gallery;
 use Preetender\Uploader\Processor;
+use stdClass;
 
 trait HasFile
 {
@@ -15,25 +17,31 @@ trait HasFile
      */
     public function getImagesAttribute()
     {
-        $folder = $this->getImageKey();
+        $processFiles = function () {
+            $images = [];
 
-        if (!isset($this->attributes[$folder]) || !$this->attributes[$folder]) {
-            return [];
-        }
+            foreach ($this->galleries as $gallery) {
+                $breakpoints = new stdClass;
 
-        $images = $this->galleries->map(
-            fn ($gallery) => $gallery->files->map(
-                fn ($file) => Processor::disk($gallery->disk)->url(
-                    sprintf('%s/%s.%s', $gallery->folder, $file->filename, $file->extension)
-                )
-            )
-        );
+                foreach ($gallery->files as $file) {
+                    $breakpoints->{$file->width} = Processor::disk($gallery->disk)->url(
+                        sprintf('%s/%s', $gallery->folder, $file->filename)
+                    );
+                }
+
+                $images[] = $breakpoints;
+            }
+
+            return $images;
+        };
 
         if (!Config::get('uploader.cache.enable')) {
-            return $images;
+            return $processFiles();
         }
 
-        return Processor::cache()->rememberForever($this->getCacheKey(), fn () => $images);
+        Request::has('expired') && $this->cleanCacheImages();
+
+        return Processor::cache()->rememberForever($this->getCacheKey(), $processFiles);
     }
 
     /**
@@ -53,7 +61,8 @@ trait HasFile
             [
                 "$cache_key.images",
                 "$cache_key.main",
-                "$cache_key.avatar"
+                "$cache_key.avatar",
+                $cache_key
             ]
         )->each(fn ($key) => Processor::cache()->forget($key));
     }

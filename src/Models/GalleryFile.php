@@ -21,10 +21,9 @@ class GalleryFile extends Model
      */
     protected $fillable = [
         'filename',
-        'extension',
         'size',
         'width',
-        'height'
+        'height',
     ];
 
     /**

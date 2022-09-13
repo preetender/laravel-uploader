@@ -26,7 +26,6 @@ return new class extends Migration
             $table->id();
             $table->foreignId('gallery_id')->constrained('fat_galleries')->cascadeOnDelete()->cascadeOnUpdate();
             $table->string('filename', 60)->index();
-            $table->string('extension', 4)->index();
             $table->integer('size');
             $table->integer('width');
             $table->integer('height');

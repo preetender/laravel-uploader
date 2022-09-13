@@ -3,7 +3,7 @@
 namespace Preetender\Uploader;
 
 use Illuminate\Container\Container;
-use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
@@ -39,21 +39,25 @@ class Processor
     {
         $this->file = $file;
         $this->output = $output ?? '/';
-        $this->breakpoints = $sizes ?? Config::get('uploader.sizes');
-        $this->initialize();
+        $this->breakpoints = empty($sizes) ? Config::get('uploader.sizes') : $sizes;
+        $this->setDirectory("{$this->output}/{$this->getHash()}");
     }
 
     /**
+     * Set model related.
+     *
      * @return void
      */
-    private function initialize(): void
+    public function model(Model $model): void
     {
-        $this->setDirectory("{$this->output}/{$this->getHash()}");
-
-        $this->gallery = Gallery::create([
+        $payload = [
             'folder' => $this->getDirectory(),
             'disk' => Config::get('uploader.disk', 'local')
-        ]);
+        ];
+
+        $this->gallery = Gallery::query()->firstOrNew($payload);
+        $this->gallery->origin()->associate($model);
+        $this->gallery->save();
     }
 
     /**
@@ -74,6 +78,10 @@ class Processor
      */
     public function process(): array
     {
+        throw_if(!$this->getGallery(), new UploadException('model_not_defined'));
+
+        throw_if(empty($this->breakpoints), new UploadException('breakpoint_not_configured'));
+
         foreach ($this->breakpoints as $size) {
             $upload = $this->pipe($size);
 
@@ -121,9 +129,8 @@ class Processor
 
         throw_if(!$saved, new UploadException('file_not_saved'));
 
-        $galleryFile = $this->gallery->files()->create([
-            'filename' => $filename,
-            'extension' => $make->extension,
+        $galleryFile = $this->getGallery()->files()->create([
+            'filename' => sprintf('%s.%s', $width, $extension),
             'size' => $make->filesize(),
             'width' => $make->width(),
             'height' => $make->height()
