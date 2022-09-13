@@ -2,7 +2,7 @@
 
 namespace Preetender\Uploader;
 
-use Illuminate\Container\Container;
+use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\ImageManagerStatic as Image;
@@ -35,7 +35,7 @@ class Processor
     public function __construct($file, string $output = '/')
     {
         $this->file = $file;
-        $this->output = $output;
+        $this->output = $output ?? '/';
         $this->breakpoints = Config::get('uploader.sizes');
         $this->setDirectory("{$this->output}/{$this->getHash()}");
     }
@@ -54,7 +54,7 @@ class Processor
     }
 
     /**
-     * Processaar imagem
+     * Enqueue processes.
      *
      * @return array
      */
@@ -72,10 +72,12 @@ class Processor
     }
 
     /**
-     * Reverter upload
+     * Process upload.
      *
-     * @param int $size
-     * @return bool
+     * @param int $width
+     * @param int $height
+     * @param string $mode
+     * @return mixed
      */
     public function pipe(int $width, ?int $height = null, string $mode = 'public')
     {
@@ -84,7 +86,7 @@ class Processor
         if ($width > $image->width()) {
             return false;
         }
-        
+
         $extension = Config::get('uploader.compress.extension', 'webp');
 
         $make = $image->resize($width, $height, fn ($h) => $h->aspectRatio());
@@ -97,16 +99,14 @@ class Processor
         $this->pipes[$width] = $filename;
 
         $encoded = $make->encode(
-            $extension, 
+            $extension,
             Config::get('uploader.compress.quality', 85)
         )->encoded;
 
-        return Storage::disk(Config::get('uploader.disk', 'local'))->put($filename, $encoded, $mode);
+        return $this->disk()->put($filename, $encoded, $mode);
     }
 
     /**
-     * Determinar caminho
-     *
      * @param string $dir
      * @return Processor
      */
@@ -118,7 +118,7 @@ class Processor
     }
 
     /**
-     * Obter diretório gerado.
+     * Get directory.
      *
      * @return string
      */
@@ -128,7 +128,7 @@ class Processor
     }
 
     /**
-     * Chave do processo
+     * Get unique key.
      *
      * @return string
      */
@@ -144,10 +144,20 @@ class Processor
      */
     public function revert()
     {
-        $fs = Container::getInstance()->make('filesystem');
+        $fs = $this->disk();
 
         if ($fs->exists($this->directory)) {
             $fs->deleteDirectory($this->directory);
         }
+    }
+
+    /**
+     * Get disk in use.
+     *
+     * @return Filesystem
+     */
+    public function disk()
+    {
+        return Storage::disk(Config::get('uploader.disk', 'local'));
     }
 }
