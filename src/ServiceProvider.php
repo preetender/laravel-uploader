@@ -23,5 +23,7 @@ class ServiceProvider extends BaseServiceProvider
         $this->publishes([
             __DIR__ . '/../config/uploader.php' => App::configPath('uploader.php')
         ]);
+
+        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
     }
 }

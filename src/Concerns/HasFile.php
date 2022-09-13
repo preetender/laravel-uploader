@@ -2,8 +2,9 @@
 
 namespace Preetender\Uploader\Concerns;
 
-use Illuminate\Container\Container;
 use Illuminate\Support\Facades\Config;
+use Preetender\Uploader\Models\Gallery;
+use Preetender\Uploader\Processor;
 
 trait HasFile
 {
@@ -14,40 +15,25 @@ trait HasFile
      */
     public function getImagesAttribute()
     {
-        $image_key = $this->getImageKey();
+        $folder = $this->getImageKey();
 
-        if (!isset($this->attributes[$image_key]) || !$this->attributes[$image_key]) {
+        if (!isset($this->attributes[$folder]) || !$this->attributes[$folder]) {
             return [];
         }
 
-        $prepareImages = function () use ($image_key) {
-            $fs = Container::getInstance()->make('filesystem')->disk(
-                Config::get('uploader.disk', 'local')
-            );
-
-            $images = [];
-
-            foreach ($this->getSizes() as $size) {
-                $link = sprintf("%s/%s.webp", $this->attributes[$image_key], $size);
-
-                if (!$fs->exists($link)) {
-                    continue;
-                }
-
-                $images[$size] = $fs->url($link);
-            }
-
-            return (object) $images;
-        };
+        $images = $this->galleries->map(
+            fn ($gallery) => $gallery->files->map(
+                fn ($file) => Processor::disk($gallery->disk)->url(
+                    sprintf('%s/%s.%s', $gallery->folder, $file->filename, $file->extension)
+                )
+            )
+        );
 
         if (!Config::get('uploader.cache.enable')) {
-            return $prepareImages();
+            return $images;
         }
 
-        return Container::getInstance()
-            ->make('cache')
-            ->driver(Config::get('uploader.cache.driver', 'file'))
-            ->rememberForever($this->getCacheKey(), $prepareImages);
+        return Processor::cache()->rememberForever($this->getCacheKey(), fn () => $images);
     }
 
     /**
@@ -63,15 +49,13 @@ trait HasFile
 
         $cache_key = $this->getCacheKey();
 
-        $keys = [
-            "$cache_key.images",
-            "$cache_key.main",
-            "$cache_key.avatar"
-        ];
-
-        foreach ($keys as $key) {
-            Container::getInstance()->make('cache')->forget($key);
-        }
+        collect(
+            [
+                "$cache_key.images",
+                "$cache_key.main",
+                "$cache_key.avatar"
+            ]
+        )->each(fn ($key) => Processor::cache()->forget($key));
     }
 
     /**
@@ -87,12 +71,10 @@ trait HasFile
     }
 
     /**
-     * Field related of image.
-     *
-     * @return string
+     * @return mixed
      */
-    public function getImageKey()
+    public function galleries()
     {
-        return 'image';
+        return $this->morphMany(Gallery::class, 'origin');
     }
 }

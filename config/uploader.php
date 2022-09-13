@@ -1,17 +1,17 @@
 <?php
 
 return [
-    'disk' => 'local',
+    'disk' => env('UPLOADER_DISK', 'local'),
 
     'cache' => [
-        'enable' => true,
-        'driver' => 'file',
-        'prefix' => 'uploader_'
+        'enable' => env('UPLOADER_CACHE_ENABLE', false),
+        'driver' => env('UPLOADER_CACHE_DRIVE', 'file'),
+        'prefix' => env('UPLOADER_CACHE_PREFIX', 'uploader_')
     ],
 
     'compress' => [
-        'extension' => 'webp',
-        'quality' => 100
+        'extension' => env('UPLOADER_IMAGE_EXTENSION', 'webp'),
+        'quality' => env('UPLOADER_IMAGE_QUALITY', 85)
     ],
 
     'sizes' => [
