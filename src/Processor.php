@@ -111,7 +111,10 @@ class Processor
 
         $extension = Config::get('uploader.compress.extension', 'webp');
 
-        $make = $image->resize($width, $height, fn ($h) => $h->aspectRatio());
+        $make = $image->resize($width, $height, function ($constraint) {
+            $constraint->aspectRatio();
+            $constraint->upsize();
+        });
 
         $filename = Str::of("{$this->getDirectory()}/:width.:extension")
             ->replace('-', '')
@@ -120,18 +123,18 @@ class Processor
 
         $this->pipes[$width] = $filename;
 
-        $encoded = $make->encode(
+        $encode = $make->encode(
             $extension,
             Config::get('uploader.compress.quality', 85)
-        )->encoded;
+        );
 
-        $saved = $this->disk()->put($filename, $encoded, $mode);
+        $saved = $this->disk()->put($filename, $encode->getEncoded(), $mode);
 
         throw_if(!$saved, new UploadException('file_not_saved'));
 
         $galleryFile = $this->getGallery()->files()->create([
             'filename' => sprintf('%s.%s', $width, $extension),
-            'size' => $make->filesize(),
+            'size' => mb_strlen($encode->getEncoded(), '8bit'),
             'width' => $make->width(),
             'height' => $make->height()
         ]);
