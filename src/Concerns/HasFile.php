@@ -24,9 +24,7 @@ trait HasFile
                 $breakpoints = new stdClass;
 
                 foreach ($gallery->files as $file) {
-                    $breakpoints->{$file->width} = Processor::disk($gallery->disk)->url(
-                        sprintf('%s/%s', $gallery->folder, $file->filename)
-                    );
+                    $breakpoints->{$file->width} = $file->url;
                 }
 
                 $images[] = $breakpoints;

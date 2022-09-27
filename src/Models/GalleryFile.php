@@ -2,8 +2,10 @@
 
 namespace Preetender\Uploader\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Preetender\Uploader\Processor;
 
 class GalleryFile extends Model
 {
@@ -25,6 +27,18 @@ class GalleryFile extends Model
         'width',
         'height',
     ];
+
+    /**
+     * @return Attribute
+     */
+    public function url(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Processor::disk($this->gallery->disk)->url(
+                sprintf('%s/%s', $this->gallery->folder, $this->filename)
+            )
+        );
+    }
 
     /**
      * @return BelongsTo

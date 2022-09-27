@@ -28,13 +28,6 @@ class Gallery extends Model
     ];
 
     /**
-     * The accessors to append to the model's array form.
-     *
-     * @var array
-     */
-    protected $appends = ['size'];
-
-    /**
      * @return Attribute
      */
     protected function size()
