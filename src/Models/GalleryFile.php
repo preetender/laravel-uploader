@@ -33,7 +33,7 @@ class GalleryFile extends Model
      */
     public function url(): Attribute
     {
-        return Attribute::make(
+        return Attribute::get(
             get: fn () => Processor::disk($this->gallery->disk)->url(
                 sprintf('%s/%s', $this->gallery->folder, $this->filename)
             )
